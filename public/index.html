@@ -86,7 +86,7 @@
         AIが生成した15の質問に答えることで、あなたに最適な宗教が提案される。`;
 
         async function loadQuestions() {
-            const response = await fetch("questions.json"); // ✅ 修正！
+            const response = await fetch("/questions.json");  // ✅ ルート直下の public/questions.json を取得
             questions = await response.json();
         }
 
