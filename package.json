@@ -2,6 +2,7 @@
   "name": "mistral-diagnosis-api",
   "version": "1.0.0",
   "description": "Mistral APIで診断を行うサーバー",
+  "type": "module",  
   "main": "api/server.js",
   "scripts": {
     "dev": "node api/server.js",
