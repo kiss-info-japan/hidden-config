@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 
 require('dotenv').config();
 const express = require('express');
@@ -174,52 +174,3 @@ app.post('/chat', async (req, res) => {
 app.listen(PORT, () => {
     console.log(`🚀 サーバーがポート ${PORT} で起動しました`);
 });
-=======
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const fetch = require('node-fetch');
-
-const app = express();
-const PORT = 3000;
-
-app.use(cors());
-app.use(express.json());
-
-const API_KEY = process.env.MISTRAL_API_KEY;
-if (!API_KEY) {
-    console.error("🚨 MISTRAL_API_KEY が設定されていません！.env ファイルを確認してください。");
-    process.exit(1);
-}
-
-// 📌 AI 診断 API エンドポイント
-app.post('/api/mistral', async (req, res) => {
-    if (!req.body.messages) {
-        return res.status(400).json({ error: "messages が必要です。" });
-    }
-
-    try {
-        const response = await fetch("https://api.mistral.ai/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${API_KEY}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                model: "mistral-medium",
-                messages: req.body.messages
-            })
-        });
-
-        const data = await response.json();
-        res.status(200).json(data);
-    } catch (error) {
-        console.error("🚨 Mistral API エラー:", error);
-        res.status(500).json({ error: "Mistral API の呼び出しに失敗しました。" });
-    }
-});
-
-app.listen(PORT, () => {
-    console.log(`🚀 サーバーが http://localhost:${PORT} で起動しました`);
-});
->>>>>>> 8731ad6 (Initial commit)
