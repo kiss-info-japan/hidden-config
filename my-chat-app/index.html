@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>シンプルAIチャット</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #222; color: white; text-align: center; }
+        .chat-container { width: 90%; max-width: 600px; margin: 20px auto; padding: 20px; background: #333; border-radius: 10px; }
+        .chat-box { height: 300px; overflow-y: auto; border: 1px solid #444; padding: 10px; text-align: left; }
+        .input-box { width: calc(100% - 22px); padding: 10px; border: none; border-radius: 5px; margin-top: 10px; }
+        .send-button { padding: 10px; background: #0d6efd; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <h1>シンプルAIチャット</h1>
+    <div class="chat-container">
+        <div class="chat-box" id="chatBox"></div>
+        <input type="text" id="userInput" class="input-box" placeholder="メッセージを入力..." />
+        <button class="send-button" onclick="sendMessage()">送信</button>
+    </div>
+
+    <script>
+        const API_URL = "https://your-vercel-app.vercel.app/api/chat"; // VercelのAPIエンドポイントに変更！
+
+        function appendMessage(content, sender) {
+            const chatBox = document.getElementById("chatBox");
+            const messageDiv = document.createElement("div");
+            messageDiv.textContent = sender + ": " + content;
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const inputField = document.getElementById("userInput");
+            const userMessage = inputField.value.trim();
+            if (!userMessage) return;
+
+            appendMessage(userMessage, "あなた");
+            inputField.value = "";
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: userMessage })
+                });
+
+                const data = await response.json();
+                appendMessage(data.reply, "AI");
+
+            } catch (error) {
+                console.error("🚨 エラー:", error);
+                appendMessage("エラーが発生しました。", "AI");
+            }
+        }
+
+        // 初回メッセージ
+        window.onload = () => appendMessage("こんにちは！ご質問どうぞ！", "AI");
+    </script>
+
+</body>
+</html>
