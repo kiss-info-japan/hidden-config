@@ -1,11 +1,5 @@
 {
-  "builds": [
-    {
-      "src": "public/index.html",
-      "use": "@vercel/static"
-    }
-  ],
   "routes": [
-    { "src": "/(.*)", "dest": "/public/index.html" }
+    { "src": "/questions.json", "dest": "/public/questions.json" }
   ]
 }
