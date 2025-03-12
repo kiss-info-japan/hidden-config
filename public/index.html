@@ -70,23 +70,14 @@
     </div>
 
     <script>
-        const API_URL = window.location.hostname === "localhost"
-    ? "http://localhost:3000/api/mistral"  // ✅ ローカル環境
-    : "https://hidden-config-ltq8q10z9-kylies-projects-983629b6.vercel.app/";  // ✅ Vercel用
-
-
+        const API_URL = "http://localhost:3000/chat";
         let questions = [];
         let selectedQuestions = [];
         let userResponses = [];
         let currentQuestion = 0;
 
-        const introText = 
-        `多くの日本人は無宗教とされるが、実際には文化や社会的影響によって無意識のうちに信念が形成されている。
-        その信念はPCの隠し設定（Hidden Config）のように、私たちの言動に知らず知らずのうちに作用し続ける。
-        AIが生成した15の質問に答えることで、あなたに最適な宗教が提案される。`;
-
         async function loadQuestions() {
-            const response = await fetch("/questions.json");  // ✅ ルート直下の public/questions.json を取得
+            const response = await fetch("/questions.json");
             questions = await response.json();
         }
 
@@ -100,7 +91,7 @@
             selectedQuestions = getRandomQuestions();
             userResponses = [];
             currentQuestion = 0;
-            typewriterEffect(introText, "system", showQuestion);
+            showQuestion();
         }
 
         function showQuestion() {
@@ -140,57 +131,27 @@
         }
 
         async function sendToAI() {
-    appendMessage("診断中...", "system");
+            appendMessage("診断中...", "system");
 
-    try {
-        const response = await fetch(API_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ messages: userResponses })
-        });
+            const response = await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId: "123", responses: userResponses })
+            });
 
-        if (!response.ok) {
-            throw new Error(`HTTPエラー: ${response.status}`);
+            const data = await response.json();
+            appendMessage(`診断結果: ${data.reply}`, "system");
+            document.getElementById("startButton").style.display = "block";
         }
-
-        const text = await response.text();
-        console.log("Mistral API Response:", text); // レスポンス内容を確認
-        const data = JSON.parse(text); // 空レスポンスの回避
-
-        if (!data.choices || !data.choices.length) {
-            throw new Error("APIからの応答が不正です");
-        }
-
-        appendMessage(`診断結果: ${data.choices[0].message.content.trim()}`, "system");
-    } catch (error) {
-        console.error("🚨 AI診断エラー:", error);
-        appendMessage("診断に失敗しました。もう一度試してください。", "system");
-    }
-
-    document.getElementById("startButton").style.display = "block";
-}
-
 
         function appendMessage(content, type, callback = null) {
             const chatBox = document.getElementById("chatBox");
             const messageDiv = document.createElement("div");
             messageDiv.classList.add("message", type);
             chatBox.appendChild(messageDiv);
-            typewriterEffect(messageDiv, content, callback);
+            messageDiv.innerHTML = content;
             chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        function typewriterEffect(element, text, callback = null) {
-            let i = 0;
-            element.innerHTML = "";
-            const typingInterval = setInterval(() => {
-                element.innerHTML += text.charAt(i);
-                i++;
-                if (i >= text.length) {
-                    clearInterval(typingInterval);
-                    if (callback) callback();
-                }
-            }, 50);
+            if (callback) callback();
         }
 
         document.getElementById("startButton").addEventListener("click", startQuiz);
