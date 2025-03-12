@@ -1,39 +1,35 @@
-require('dotenv').config();
-const fetch = require('node-fetch');
+import express from "express";
+import cors from "cors";
+import fetch from "node-fetch";
+import dotenv from "dotenv";
 
-module.exports = async (req, res) => {
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: "Method Not Allowed" });
-    }
+dotenv.config();
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-    const { messages } = req.body;
+const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY;
+const MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions";
 
-    if (!messages || !Array.isArray(messages)) {
-        return res.status(400).json({ error: "Invalid request format" });
-    }
-
-    const API_KEY = process.env.MISTRAL_API_KEY;
-    if (!API_KEY) {
-        return res.status(500).json({ error: "APIキーが設定されていません" });
-    }
-
+app.post("/api/mistral", async (req, res) => {
     try {
-        const response = await fetch("https://api.mistral.ai/v1/chat/completions", {
+        const response = await fetch(MISTRAL_API_URL, {
             method: "POST",
             headers: {
-                "Authorization": `Bearer ${API_KEY}`,
+                "Authorization": `Bearer ${MISTRAL_API_KEY}`,
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
                 model: "mistral-medium",
-                messages
+                messages: req.body.messages
             })
         });
 
         const data = await response.json();
-        return res.status(200).json(data);
+        res.json(data);
     } catch (error) {
-        console.error("🚨 Mistral API エラー:", error);
-        return res.status(500).json({ error: "Mistral API エラー" });
+        res.status(500).json({ error: error.message });
     }
-};
+});
+
+export default app;  // ✅ Vercel用に export する

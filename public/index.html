@@ -70,7 +70,9 @@
     </div>
 
     <script>
-        const API_URL = "http://localhost:3000/chat";
+const API_URL = window.location.hostname === "localhost"
+    ? "http://localhost:3000/api/mistral"  // ✅ ローカル環境
+    : "https://hidden-config-sc86-7atmm4pbu-kylies-projects-983629b6.vercel.app";  // ✅ Vercel用
         let questions = [];
         let selectedQuestions = [];
         let userResponses = [];

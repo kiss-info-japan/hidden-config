@@ -1,5 +1,10 @@
 {
+  "version": 2,
+  "builds": [
+    { "src": "api/mistral.js", "use": "@vercel/node" }
+  ],
   "routes": [
+    { "src": "/api/mistral", "dest": "/api/mistral.js" },
     { "src": "/questions.json", "dest": "/public/questions.json" }
   ]
 }
