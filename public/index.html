@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hidden Config - 宗教診断</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #FFF;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: flex-start;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .console {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 1em;
+            line-height: 1.5;
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #000000;
+            color: #FFF;
+            width: 100%;
+            max-width: 800px;
+            height: calc(100vh - 160px);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: flex-start;
+        }
+        #startButton {
+            background-color: #000000;
+            color: #FFF;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            align-self: flex-start;
+            position: relative;
+            z-index: 10;
+        }
+        .input-line input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            background: #222;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <button id="startButton">診断を開始</button>
+    <div id="chatContainer">
+        <div id="chatBox" class="console"></div>
+    </div>
+
+    <script>
+        const API_URL = window.location.hostname === "localhost"
+    ? "http://localhost:3000/api/mistral"  // ✅ ローカル環境
+    : "https://hidden-config-ltq8q10z9-kylies-projects-983629b6.vercel.app/";  // ✅ Vercel用
+
+
+        let questions = [];
+        let selectedQuestions = [];
+        let userResponses = [];
+        let currentQuestion = 0;
+
+        const introText = 
+        `多くの日本人は無宗教とされるが、実際には文化や社会的影響によって無意識のうちに信念が形成されている。
+        その信念はPCの隠し設定（Hidden Config）のように、私たちの言動に知らず知らずのうちに作用し続ける。
+        AIが生成した15の質問に答えることで、あなたに最適な宗教が提案される。`;
+
+        async function loadQuestions() {
+            const response = await fetch("/questions.json");
+            questions = await response.json();
+        }
+
+        function getRandomQuestions() {
+            return questions.sort(() => Math.random() - 0.5).slice(0, 15);
+        }
+
+        function startQuiz() {
+            document.getElementById("chatBox").innerHTML = "";
+            document.getElementById("startButton").style.display = "none";
+            selectedQuestions = getRandomQuestions();
+            userResponses = [];
+            currentQuestion = 0;
+            typewriterEffect(introText, "system", showQuestion);
+        }
+
+        function showQuestion() {
+            if (currentQuestion >= selectedQuestions.length) {
+                sendToAI();
+                return;
+            }
+
+            const question = selectedQuestions[currentQuestion];
+            appendMessage(`Q: ${question.text}`, "system", () => {
+                const chatBox = document.getElementById("chatBox");
+                const inputDiv = document.createElement("div");
+                inputDiv.classList.add("input-line");
+
+                const inputField = document.createElement("input");
+                inputField.type = "text";
+                inputField.placeholder = "ここに入力...";
+                inputDiv.appendChild(inputField);
+
+                chatBox.appendChild(inputDiv);
+                inputField.focus();
+
+                inputField.addEventListener("keydown", (event) => {
+                    if (event.key === "Enter") {
+                        userResponses.push({
+                            question: question.text,
+                            answer: inputField.value
+                        });
+                        currentQuestion++;
+                        inputDiv.remove();
+                        showQuestion();
+                    }
+                });
+
+                chatBox.scrollTop = chatBox.scrollHeight;
+            });
+        }
+
+        async function sendToAI() {
+    appendMessage("診断中...", "system");
+
+    try {
+        const response = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ messages: userResponses })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTPエラー: ${response.status}`);
+        }
+
+        const text = await response.text();
+        console.log("Mistral API Response:", text); // レスポンス内容を確認
+        const data = JSON.parse(text); // 空レスポンスの回避
+
+        if (!data.choices || !data.choices.length) {
+            throw new Error("APIからの応答が不正です");
+        }
+
+        appendMessage(`診断結果: ${data.choices[0].message.content.trim()}`, "system");
+    } catch (error) {
+        console.error("🚨 AI診断エラー:", error);
+        appendMessage("診断に失敗しました。もう一度試してください。", "system");
+    }
+
+    document.getElementById("startButton").style.display = "block";
+}
+
+
+        function appendMessage(content, type, callback = null) {
+            const chatBox = document.getElementById("chatBox");
+            const messageDiv = document.createElement("div");
+            messageDiv.classList.add("message", type);
+            chatBox.appendChild(messageDiv);
+            typewriterEffect(messageDiv, content, callback);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function typewriterEffect(element, text, callback = null) {
+            let i = 0;
+            element.innerHTML = "";
+            const typingInterval = setInterval(() => {
+                element.innerHTML += text.charAt(i);
+                i++;
+                if (i >= text.length) {
+                    clearInterval(typingInterval);
+                    if (callback) callback();
+                }
+            }, 50);
+        }
+
+        document.getElementById("startButton").addEventListener("click", startQuiz);
+        loadQuestions();
+    </script>
+</body>
+</html>
